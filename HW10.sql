@@ -71,12 +71,12 @@ inventory.film_id = film.film_id
 WHERE title = "Hunchback Impossible";
 -- 6e. Using the tables payment and customer and the JOIN command, list the total paid by each customer. 
 -- List the customers alphabetically by last name:
-select first_name as "First Name",
-last_name as "Last Name",
-SUM(amount) as "Total Amount Paid"
-from customer
-join payment
-using(customer_id)
+SELECT first_name AS "First Name",
+last_name AS "Last Name",
+SUM(amount) AS "Total Amount Paid"
+FROM customer
+JOIN payment
+USING(customer_id)
 GROUP BY customer_id
 ORDER BY last_name;
 -- 7a. The music of Queen and Kris Kristofferson have seen an unlikely resurgence. 
@@ -111,36 +111,81 @@ ORDER BY last_name;
   )
  );
 -- 7c. You want to run an email marketing campaign in Canada, for which you will need the names and email addresses of all Canadian customers. Use joins to retrieve this information.
-select * from address;
-select first_name as "First Name",
-last_name as "Last Name",
-Email as "Email Address"
-from customer
-join payment
-using(customer_id)
+SELECT customer.first_name,
+  customer.last_name,
+  customer.email,
+  country.country
+FROM customer
+LEFT OUTER JOIN address
+  ON customer.address_id=address.address_id
+LEFT OUTER JOIN city
+  ON address.city_id=city.city_id 
+LEFT OUTER JOIN country 
+  ON city.country_id=country.country_id
+WHERE country LIKE 'CAN%';  
+-- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
+  (
+   SELECT title
+   FROM film
+   WHERE film_id IN
+    (
+    SELECT film_id
+    FROM film_category
+    WHERE category_id IN
+     (
+	 SELECT category_id
+	 FROM category
+	 WHERE name = 'family'
+   )
+  )
+ );
+-- 7e. Display the most frequently rented movies in descending order.
+-- Tables used:  Rental, Inventory and Film
+SELECT title, COUNT(inventory_id) AS Rental_Count
+FROM film
+JOIN inventory USING (film_id)
+JOIN rental USING (inventory_id)
+GROUP BY film_id
+ORDER BY rental_count DESC;
+-- 7f. Write a query to display how much business, in dollars, each store brought in.
+SELECT first_name AS "First Name",
+last_name AS "Last Name",
+SUM(amount) AS "Total Amount Paid"
+FROM customer
+JOIN payment
+USING(customer_id)
 GROUP BY customer_id
 ORDER BY last_name;
-
--- 7d. Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
-
-
--- 7e. Display the most frequently rented movies in descending order.
-
-
--- 7f. Write a query to display how much business, in dollars, each store brought in.
-
-
 -- 7g. Write a query to display for each store its store ID, city, and country.
-
-
+SELECT store_id, city, country
+FROM store
+JOIN address USING(address_id)
+JOIN city USING(city_id)
+JOIN country USING(country_id);
 -- 7h. List the top five genres in gross revenue in descending order. 
 -- (Hint: you may need to use the following tables: category, film_category, inventory, payment, and rental.)
-
-
--- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
-
-
+SELECT name, COUNT(amount) AS "Gross Revenue"
+FROM payment
+JOIN rental USING(rental_id)
+JOIN inventory USING(inventory_id)
+JOIN film_category USING(film_id)
+JOIN category USING(category_id)
+GROUP BY name
+ORDER BY amount DESC
+LIMIT 5;
+-- 8a. In your new role as an executive, you would like to have an easy way of viewing the Top five genres by gross revenue. 
+-- Use the solution from the problem above to create a view. If you haven't solved 7h, you can substitute another query to create a view.
+CREATE VIEW Top_5_Genres_By_Gross_Revenue AS 
+SELECT name, COUNT(amount) AS "Gross Revenue"
+FROM payment
+JOIN rental USING(rental_id)
+JOIN inventory USING(inventory_id)
+JOIN film_category USING(film_id)
+JOIN category USING(category_id)
+GROUP BY name
+ORDER BY amount DESC
+LIMIT 5;
 -- 8b. How would you display the view that you created in 8a?
-
-
+SELECT * FROM Top_5_Genres_By_Gross_Revenue;
 -- 8c. You find that you no longer need the view top_five_genres. Write a query to delete it.
+DROP VIEW Top_5_Genres_By_Gross_Revenue;
